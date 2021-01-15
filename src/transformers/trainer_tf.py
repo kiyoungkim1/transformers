@@ -43,7 +43,7 @@ if is_comet_available():
     import comet_ml
 
 logger = logging.get_logger(__name__)
-
+logger.setLevel(logging.INFO)
 
 class TFTrainer:
     """
@@ -135,10 +135,13 @@ class TFTrainer:
             raise ValueError("Trainer: training requires a train_dataset.")
 
         self.total_train_batch_size = self.args.train_batch_size * self.args.gradient_accumulation_steps
-        self.num_train_examples = self.train_dataset.cardinality().numpy()
-
-        if self.num_train_examples < 0:
-            raise ValueError("The training dataset must have an asserted cardinality")
+        # self.num_train_examples = self.train_dataset.cardinality().numpy()
+        #
+        # if self.num_train_examples < 0:
+        #     raise ValueError("The training dataset must have an asserted cardinality")
+        self.num_train_examples = 0
+        for _ in self.train_dataset:
+            self.num_train_examples += 1
 
         ds = (
             self.train_dataset.repeat()
@@ -654,10 +657,10 @@ class TFTrainer:
 
                 labels = {
                     k: tf.concat(
-                        [ft[self.args.train_batch_size // self.args.n_replicas :], reduced_labels[k]],
+                        [lbl[self.args.train_batch_size // self.args.n_replicas :], reduced_labels[k]],
                         axis=0,
                     )
-                    for k, ft in labels.items()
+                    for k, lbl in labels.items()
                 }
 
             gradients = self.gradient_accumulator.gradients
