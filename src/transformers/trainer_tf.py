@@ -551,11 +551,17 @@ class TFTrainer:
                     self.global_step = iterations.numpy()
                     self.epoch_logging = epoch_iter + (step + 1) / self.steps_per_epoch
 
-                    training_loss = self.train_loss.result() / (step + 1)
+                    training_loss = self.train_loss.result().numpy()
+
+                    if self.args.n_replicas > 1:
+                        training_loss /= self.args.n_replicas
+
+                    if self.args.gradient_accumulation_steps > 1:
+                        training_loss /= self.args.gradient_accumulation_steps
 
                     if self.args.debug:
                         logs = {}
-                        logs["loss"] = training_loss.numpy()
+                        logs["loss"] = training_loss
                         logs["epoch"] = self.epoch_logging
 
                         self.log(logs)
@@ -577,7 +583,7 @@ class TFTrainer:
                         self.global_step == 1 and self.args.logging_first_step
                     ):
                         logs = {}
-                        logs["loss"] = training_loss.numpy()
+                        logs["loss"] = training_loss
                         logs["learning_rate"] = self.lr_scheduler(self.global_step).numpy()
                         logs["epoch"] = self.epoch_logging
 
@@ -594,7 +600,7 @@ class TFTrainer:
                     if self.global_step % self.steps_per_epoch == 0:
                         break
 
-                self.train_loss.reset_states()
+                    self.train_loss.reset_states()
 
                 if self.args.max_steps > 0 and self.global_step >= self.args.max_steps:
                     break
