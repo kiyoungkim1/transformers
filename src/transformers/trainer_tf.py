@@ -559,6 +559,9 @@ class TFTrainer:
                     if self.args.gradient_accumulation_steps > 1:
                         training_loss /= self.args.gradient_accumulation_steps
 
+                    if self.args.train_batch_size > 1:
+                        training_loss /= self.args.train_batch_size
+
                     if self.args.debug:
                         logs = {}
                         logs["loss"] = training_loss
